@@ -1,12 +1,23 @@
-import kunyu77 from './spider/video/kunyu77.js';
-import kkys from './spider/video/kkys.js';
-import push from './spider/video/push.js';
-import alist from './spider/pan/alist.js';
+import pk_push from './spider/video/push.js';
+import live from './spider/video/live.js';
+import douban from './spider/video/douban.js';
+import aiyingshi from './spider/video/aiyingshi.js';
+import boo from './spider/video/boo.js';
+import xinshijue from './spider/video/xinshijue.js';
+import nongmin from './spider/video/nongmin.js';
+import czzy from './spider/video/czzy.js';
+import saohuo from './spider/video/saohuo.js';
+import appys from './spider/video/appys.js';
+import vcm3u8 from './spider/video/vcm3u8.js';
+import sharenice from './spider/video/sharenice.js';
+import ktv from './spider/video/ktv.js';
+import avlive from './spider/video/avlive.js';
+import maiyoux from './spider/video/maiyoux_node.js';
+import avm3u8 from './spider/video/avm3u8.js';
 import _13bqg from './spider/book/13bqg.js';
-import copymanga from './spider/book/copymanga.js';
-import ffm3u8 from './spider/video/ffm3u8.js';
+import alist from './spider/pan/alist.js';
 
-const spiders = [kunyu77, kkys, ffm3u8, push, alist, _13bqg, copymanga];
+const spiders = [pk_push,douban,live,aiyingshi,xinshijue,nongmin,czzy,saohuo,appys,vcm3u8,sharenice,ktv,avlive,maiyoux,avm3u8,_13bqg,bookan,ts230,bengou,laobaigs,coco,baozi,tewx,copymanga,hm,mhdq,alist];
 const spiderPrefix = '/spider';
 
 /**
