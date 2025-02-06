@@ -33,6 +33,18 @@ jobs:
           echo "lodash is installed."
         fi
 
+    # 检查 qs 是否安装成功
+    - name: Check qs installation
+      working-directory: nodejs
+      continue-on-error: true
+      run: |
+        if ! node -e "require('qs')" &> /dev/null; then
+          echo "qs is missing. Reinstalling..."
+          npm install qs
+        else
+          echo "qs is installed."
+        fi
+
     # 检查关键文件是否存在
     - name: Check files existence
       working-directory: nodejs
@@ -53,6 +65,14 @@ jobs:
     - name: Run npm build
       working-directory: nodejs
       run: npm run build
+
+    - name: Check dist/index.js existence
+      working-directory: nodejs
+      run: |
+        if [ ! -f "dist/index.js" ]; then
+          echo "dist/index.js not generated. Building might have failed."
+          exit 1
+        fi
 
     - name: Archive dist
       uses: actions/upload-artifact@v4
