@@ -57,7 +57,7 @@ async function init(inReq, _outResp) {
     if (!device.id) {
         device = randDeviceWithId(33);
         device.id = device.id.toLowerCase();
-        device.ua = 'okhttp/4.1.0';
+        device.ua = 'okhttp/3.14.9';
         await inReq.server.db.push(deviceKey, device);
     }
     return {};
@@ -359,7 +359,7 @@ async function test(inReq, outResp) {
 export default {
     meta: {
         key: 'kkys',
-        name: '快看影视',
+        name: '🟢 快看影视',
         type: 3,
     },
     api: async (fastify) => {

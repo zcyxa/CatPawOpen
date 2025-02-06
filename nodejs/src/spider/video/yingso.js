@@ -1,45 +1,108 @@
 import req from '../../util/req.js';
+import pkg from 'lodash';
+const { _ } = pkg;
 import { MAC_UA, formatPlayUrl } from '../../util/misc.js';
 import { load } from 'cheerio';
 import * as HLS from 'hls-parser';
 import * as Ali from '../../util/ali.js';
 import * as Quark from '../../util/quark.js';
+import { getDownload, getFilesByShareUrl, getLiveTranscoding, getShareData, initAli} from '../../util/ali.js';
 import dayjs from 'dayjs';
+import CryptoJS from 'crypto-js';
+
+let aliUrl = 'https://www.aliyundrive.com/s/';
+let quarkUrl = 'https://pan.quark.cn/s/';
+let host = 'https://yingso.fun';
+let url = host + ':3001/v3';
+
+async function request(reqUrl, data) {
+    const res = await req(reqUrl, {
+        method: 'post',
+        headers: {
+            'User-Agent': MAC_UA,
+            'Referer': host,
+            'Content-Type': 'application/json',
+        },
+        data: JSON.stringify(data),
+        postType: '',
+    });
+    return res.data;
+}
 
 
 async function init(inReq, _outResp) {
-    await Ali.initAli(inReq.server.db, inReq.server.config.ali);
+    await initAli(inReq.server.db, inReq.server.config.ali);
     await Quark.initQuark(inReq.server.db, inReq.server.config.quark);
-    return {};
+    return {}
 }
 
-async function support(inReq, _outResp) {
-    // const clip = inReq.body.clip;
-    return 'true';
+
+async function home(filter) {
+    const classes = [{'type_id':'1','type_name':'阿里云盘'},{'type_id':'2','type_name':'夸克云盘'}];
+    const filterObj = {};
+    return {
+        class: classes,
+        filters: filterObj,
+    };
+}
+
+
+async function category(inReq, _outResp) {
+    const tid = inReq.body.id;
+    let pg = inReq.body.page;
+    if (pg <= 0) pg = 1;
+    const limit = 30;
+    const params = {
+        pageSize: limit,
+        pageNum: pg,
+        root: tid,
+        cat: 'all',
+    };
+    const resp = await request(url + '/ali/all', params);
+    return parseVodList(resp, pg, limit);
+}
+
+function parseVodList(resp, pg, limit) {
+    const jsons = resp;
+    const videos = [];
+    for(const item of jsons.data){
+    let vod = [];
+    if(item.root ==1)
+    vod ={
+            vod_id: aliUrl + item.key,
+            vod_name: item.title,
+            vod_pic: 'https://inews.gtimg.com/newsapp_bt/0/13263837859/1000',
+            vod_remarks: dayjs(item.time*1000).format('YY/MM/DD hh:mm'),
+      };
+    else if(item.root == 2)
+    vod ={
+            vod_id: quarkUrl + item.key,
+            vod_name: item.title,
+            vod_pic: 'https://i2.100024.xyz/2024/03/15/o4d8hp.webp',
+            vod_remarks: dayjs(item.time*1000).format('YY/MM/DD hh:mm'),
+        };
+    else continue;
+    videos.push(vod);
+    }
+    const pgCount = _.isEmpty(videos) ? pg : pg + 1;
+    return {
+        page: pg,
+        pagecount: pgCount,
+        limit: limit,
+        total: limit * pgCount,
+        list: videos,
+    };
 }
 
 async function detail(inReq, _outResp) {
-    const ids = !Array.isArray(inReq.body.id) ? [inReq.body.id] : inReq.body.id;
-    let shareUrls = ids;
+    const shareUrl = inReq.body.id;
     const videos = [];
-    const regex = new RegExp('/s/');
-    for (const id of ids) {
-        let vod = {
-            vod_id: id,
-            vod_content: id,
-            vod_name: '推送',
-            vod_pic: 'https://pic.rmb.bdstatic.com/bjh/1d0b02d0f57f0a42201f92caba5107ed.jpeg',
-        };
-    if(!regex.test(id)){
-        vod.vod_play_from = '推送';
-        vod.vod_play_url = '推送视频$' + id;
-        videos.push(vod);
-    }
-    else{
+        let vod = ({
+            vod_id: shareUrl,
+        });
         const froms = [];
         const urls = [];
-        for (const shareUrl of shareUrls) {
-            const shareData = Ali.getShareData(shareUrl);
+                const shareData = Ali.getShareData(shareUrl);
             if (shareData) {
                 const videos = await Ali.getFilesByShareUrl(shareData);
                 if (videos.length > 0) {
@@ -70,16 +133,14 @@ async function detail(inReq, _outResp) {
                     }
                 }
             }
-        }
         vod.vod_play_from = froms.join('$$$');
         vod.vod_play_url = urls.join('$$$');
         videos.push(vod);
-        }
-    }
     return {
         list: videos,
     };
 }
+
 
 
 
@@ -214,6 +275,10 @@ async function play(inReq, _outResp) {
         transcoding.sort((a, b) => b.template_width - a.template_width);
         const urls = [];
         const proxyUrl = inReq.server.address().url + inReq.server.prefix + '/proxy/ali';
+        transcoding.forEach((t) => {
+            urls.push(t.template_id);
+            urls.push(`${proxyUrl}/trans/${t.template_id.toLowerCase()}/${ids[0]}/${ids[1]}/.m3u8`);
+        });
         urls.push('SRC');
         urls.push(`${proxyUrl}/src/down/${ids[0]}/${ids[1]}/.bin`);
         const result = {
@@ -225,16 +290,16 @@ async function play(inReq, _outResp) {
                 subt: `${proxyUrl}/src/subt/${ids[0]}/${ids[2]}/.bin`,
             };
         }
-        transcoding.forEach((t) => {
-            urls.push(t.template_id);
-            urls.push(`${proxyUrl}/trans/${t.template_id.toLowerCase()}/${ids[0]}/${ids[1]}/.m3u8`);
-        });
         return result;
     } else if (flag.startsWith('Quark-')) {
         const transcoding = (await Quark.getLiveTranscoding(ids[0], ids[1], ids[2], ids[3])).filter((t) => t.accessable);
         quarkTranscodingCache[ids[2]] = transcoding;
         const urls = [];
         const proxyUrl = inReq.server.address().url + inReq.server.prefix + '/proxy/quark';
+        transcoding.forEach((t) => {
+            urls.push(t.resolution.toUpperCase());
+            urls.push(`${proxyUrl}/trans/${t.resolution.toLowerCase()}/${ids[0]}/${encodeURIComponent(ids[1])}*${ids[2]}*${ids[3]}/.mp4`);
+        });
         urls.push('SRC');
         urls.push(`${proxyUrl}/src/redirect/${ids[0]}/${encodeURIComponent(ids[1])}*${ids[2]}*${ids[3]}/.bin`);
         urls.push('SRC_Proxy');
@@ -254,68 +319,94 @@ async function play(inReq, _outResp) {
                 subt: `${proxyUrl}/src/subt/${ids[0]}/${encodeURIComponent(ids[1])}*${ids[4]}*${ids[5]}/.bin`,
             };
         }
-        transcoding.forEach((t) => {
-            urls.push(t.resolution.toUpperCase());
-            urls.push(`${proxyUrl}/trans/${t.resolution.toLowerCase()}/${ids[0]}/${encodeURIComponent(ids[1])}*${ids[2]}*${ids[3]}/.mp4`);
-        });
         return result;
-        }
-    else if (id.indexOf('.m3u8') < 0) {
-        const sniffer = await inReq.server.messageToDart({
-            action: 'sniff',
-            opt: {
-                url: id,
-                timeout: 10000,
-                rule: 'http((?!http).){12,}?\\.(m3u8|mp4|flv|avi|mkv|rm|wmv|mpg|m4a|mp3)(?!\\?)',
-            },
-        });
-        if (sniffer && sniffer.url) {
-            const hds = {};
-            if (sniffer.headers) {
-                if (sniffer.headers['user-agent']) {
-                    hds['User-Agent'] = sniffer.headers['user-agent'];
-                }
-                if (sniffer.headers['referer']) {
-                    hds['Referer'] = sniffer.headers['referer'];
-                }
-            }
-            return {
-                parse: 0,
-                url: sniffer.url,
-                header: hds,
-            };
-        }
     }
-    return {
-        parse: 0,
-        url: id,
-        }
 }
+
+
+
+
+
+async function search(inReq, _outResp) {
+    let pg = inReq.body.page;
+    const wd = inReq.body.wd;
+    const id = inReq.body.id;
+    if (pg <= 0) pg = 1;
+    const limit = 30;
+    const params = {
+        pageSize: limit,
+        pageNum: pg,
+        title: wd,
+        root: id,
+        cat: 'all'
+    };
+    const resp = await request(url + '/ali/search', params);
+    // console.log(resp);
+    return parseVodList(resp, pg, limit);
+}
+
+
+
+
 
 async function test(inReq, outResp) {
     try {
         const printErr = function (json) {
             if (json.statusCode && json.statusCode == 500) {
-                console.error(json);
+                // console.error(json);
             }
         };
         const prefix = inReq.server.prefix;
         const dataResult = {};
-        let resp = await inReq.server.inject().post(`${prefix}/support`).payload({
-            clip: 'https://www.alipan.com/s/Av1bAc9qn6P',
-        });
-        dataResult.support = resp.json();
+        let resp = await inReq.server.inject().post(`${prefix}/init`);
+        dataResult.init = resp.json();
         printErr(resp.json());
-        resp = await inReq.server.inject().post(`${prefix}/detail`).payload({
-            id: 'https://www.alipan.com/s/Av1bAc9qn6P',
-        });
-        dataResult.detail = resp.json();
+        resp = await inReq.server.inject().post(`${prefix}/home`);
+        dataResult.home = resp.json();
         printErr(resp.json());
-        resp = await inReq.server.inject().post(`${prefix}/play`).payload({
-            flag: 'xx',
-            id: 'https://www.alipan.com/s/Av1bAc9qn6P',
+        if (dataResult.home.class && dataResult.home.class.length > 0) {
+            resp = await inReq.server.inject().post(`${prefix}/category`).payload({
+                id: dataResult.home.class[0].type_id,
+                page: 1,
+                filter: true,
+                filters: {},
+            });
+            dataResult.category = resp.json();
+            printErr(resp.json());
+            if (dataResult.category.list &&dataResult.category.list.length > 0) {
+                resp = await inReq.server.inject().post(`${prefix}/detail`).payload({
+                    id: dataResult.category.list[0].vod_id, // dataResult.category.list.map((v) => v.vod_id),
+                });
+                dataResult.detail = resp.json();
+                printErr(resp.json());
+                if (dataResult.detail.list && dataResult.detail.list.length > 0) {
+                    dataResult.play = [];
+                    for (const vod of dataResult.detail.list) {
+                        const flags = vod.vod_play_from.split('$$$');
+                        const ids = vod.vod_play_url.split('$$$');
+                        for (let j = 0; j < flags.length; j++) {
+                            const flag = flags[j];
+                            const urls = ids[j].split('#');
+                            for (let i = 0; i < urls.length && i < 2; i++) {
+                                resp = await inReq.server
+                                    .inject()
+                                    .post(`${prefix}/play`)
+                                    .payload({
+                                        flag: flag,
+                                        id: urls[i].split('$')[1],
+                                    });
+                                dataResult.play.push(resp.json());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        resp = await inReq.server.inject().post(`${prefix}/search`).payload({
+            wd: '爱',
+            page: 1,
         });
-        dataResult.play = resp.json();
+        dataResult.search = resp.json();
         printErr(resp.json());
         return dataResult;
     } catch (err) {
@@ -325,19 +416,19 @@ async function test(inReq, outResp) {
     }
 }
 
-
-
 export default {
     meta: {
-        key: 'push',
-        name: '推送',
-        type: 4,
+        key: 'yingso',
+        name: '🟢 影搜云搜',
+        type: 3,
     },
-    api: async (fastify) => {
+api: async (fastify) => {
         fastify.post('/init', init);
-        fastify.post('/support', support);
+        fastify.post('/home', home);
+        fastify.post('/category', category);
         fastify.post('/detail', detail);
         fastify.post('/play', play);
+        fastify.post('/search', search);
         fastify.get('/proxy/:site/:what/:flag/:shareId/:fileId/:end', proxy);
         fastify.get('/test', test);
     },

@@ -17,8 +17,6 @@ async function init(inReq, _outResp) {
     return {};
 }
 
-const testSiteLikes = [];
-
 async function home(_inReq, _outResp) {
     const data = await request(url);
     let classes = [];
@@ -36,17 +34,6 @@ async function home(_inReq, _outResp) {
         classes = classes.sort((a, b) => {
             return categories.indexOf(a.type_name) - categories.indexOf(b.type_name);
         });
-    }
-    if (data.list) {
-        const likes = await request(url + `?ac=detail&ids=${data.list.map((v) => v.vod_id).join(',')}`);
-        for (const vod of likes.list) {
-            testSiteLikes.push({
-                vod_id: vod.vod_id.toString(),
-                vod_name: vod.vod_name.toString(),
-                vod_pic: vod.vod_pic,
-                vod_remarks: vod.vod_remarks,
-            });
-        }
     }
     return {
         class: classes,
@@ -95,7 +82,6 @@ async function detail(inReq, _outResp) {
             vod_play_from: data.vod_play_from,
             vod_play_url: data.vod_play_url,
         };
-        vod.likes = testSiteLikes;
         videos.push(vod);
     }
     return {
@@ -137,9 +123,7 @@ async function proxy(inReq, outResp) {
         const hls = HLS.stringify(plist);
         let hlsHeaders = {};
         if (resp.headers['content-length']) {
-            Object.assign(hlsHeaders, resp.headers, {
-                'content-length': hls.length.toString(),
-            });
+            Object.assign(hlsHeaders, resp.headers, { 'content-length': hls.length.toString() });
         } else {
             Object.assign(hlsHeaders, resp.headers);
         }
@@ -158,32 +142,6 @@ async function proxy(inReq, outResp) {
 
 async function play(inReq, _outResp) {
     const id = inReq.body.id;
-    if (id.indexOf('.m3u8') < 0) {
-        const sniffer = await inReq.server.messageToDart({
-            action: 'sniff',
-            opt: {
-                url: id,
-                timeout: 10000,
-                rule: 'http((?!http).){12,}?\\.m3u8(?!\\?)',
-            },
-        });
-        if (sniffer && sniffer.url) {
-            const hds = {};
-            if (sniffer.headers) {
-                if (sniffer.headers['user-agent']) {
-                    hds['User-Agent'] = sniffer.headers['user-agent'];
-                }
-                if (sniffer.headers['referer']) {
-                    hds['Referer'] = sniffer.headers['referer'];
-                }
-            }
-            return {
-                parse: 0,
-                url: sniffer.url,
-                header: hds,
-            };
-        }
-    }
     return {
         parse: 0,
         url: inReq.server.address().dynamic + inReq.server.prefix + '/proxy/hls/' + encodeURIComponent(id) + '/.m3u8',

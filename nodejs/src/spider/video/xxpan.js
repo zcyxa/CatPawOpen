@@ -5,37 +5,97 @@ import * as HLS from 'hls-parser';
 import * as Ali from '../../util/ali.js';
 import * as Quark from '../../util/quark.js';
 import dayjs from 'dayjs';
+import pkg from 'lodash';
+const { _ } = pkg;
 
+let url = 'https://xpanpan.site';
 
+async function request(reqUrl) {
+    const resp = await req.get(reqUrl, {
+        headers: {
+            'User-Agent': MAC_UA,
+        },
+    });
+    return resp.data;
+}
+
+// 配置放在 index.config.js
+/*
+ali: {
+    token: 'xxxxxxxxxxxxxxxxxxxxxxxxx',
+    token280: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+},
+quark: {
+    cookie: 'xxxx'
+},
+*/
 async function init(inReq, _outResp) {
     await Ali.initAli(inReq.server.db, inReq.server.config.ali);
     await Quark.initQuark(inReq.server.db, inReq.server.config.quark);
     return {};
 }
 
-async function support(inReq, _outResp) {
-    // const clip = inReq.body.clip;
-    return 'true';
+async function home(inReq, _outResp) {
+    const classes = [{'type_id':'ali-yun-pan-list','type_name':'阿里云盘'},{'type_id':'kua-ke-wang-pan-list','type_name':'夸克云盘'},{'type_id':'video-tv-list','type_name':'影视资源'},{'type_id':'cartoon-list','type_name':'动漫天堂'}];
+    const filterObj = {};
+    return {
+        class: classes,
+        filters: filterObj,
+    };
 }
+
+async function category(inReq, _outResp) {
+    let pg = inReq.body.page;
+    const tid = inReq.body.id;
+    if (pg <= 0) pg = 1;
+    let page = '';
+    if (pg > 1) {
+        page = '/page/' + pg;
+    }
+    const html = await request(url + '/category/' + tid +page + '/');
+    return parseHtmlList(html, pg);
+}
+
+function parseHtmlList(html, pg) {
+    const $ = load(html);
+    const list = $('.bloglo-flex-row .col-md-12 .bloglo-entry-content-wrapper');
+    let videos = [];
+    for(var item of list) {
+        const $item = $(item);
+        const title = $item.find('.entry-header h4 a');
+        videos.push({
+            vod_id: title.attr('href'),
+            vod_name: title.attr('title'),
+            vod_pic: 'https://xpanpan.site/wp-content/uploads/2024/01/pan-logo-circle-one.png',
+            vod_remarks: '',
+        });
+    }
+    const pgCount = $('.nav-links .next').length > 0 ? pg + 1 : pg;
+    const limit = 10;
+    return {
+        page: pg,
+        pagecount: pgCount,
+        limit: limit,
+        total: limit * pgCount,
+        list: videos,
+    };
+}
+
 
 async function detail(inReq, _outResp) {
     const ids = !Array.isArray(inReq.body.id) ? [inReq.body.id] : inReq.body.id;
-    let shareUrls = ids;
     const videos = [];
-    const regex = new RegExp('/s/');
     for (const id of ids) {
+        const html = await request(id);
+        const $ = load(html);
         let vod = {
             vod_id: id,
-            vod_content: id,
-            vod_name: '推送',
-            vod_pic: 'https://pic.rmb.bdstatic.com/bjh/1d0b02d0f57f0a42201f92caba5107ed.jpeg',
+            vod_name: $($('.entry-content h6')).text(),
+            vod_pic: 'https://xpanpan.site/wp-content/uploads/2024/01/pan-logo-circle-one.png',
         };
-    if(!regex.test(id)){
-        vod.vod_play_from = '推送';
-        vod.vod_play_url = '推送视频$' + id;
-        videos.push(vod);
-    }
-    else{
+        const shareUrls = $('div.entry-content ul li a')
+            .map((_, a) => a.children[0].data)
+            .get();
         const froms = [];
         const urls = [];
         for (const shareUrl of shareUrls) {
@@ -74,14 +134,11 @@ async function detail(inReq, _outResp) {
         vod.vod_play_from = froms.join('$$$');
         vod.vod_play_url = urls.join('$$$');
         videos.push(vod);
-        }
     }
     return {
         list: videos,
     };
 }
-
-
 
 const aliTranscodingCache = {};
 const aliDownloadingCache = {};
@@ -214,6 +271,10 @@ async function play(inReq, _outResp) {
         transcoding.sort((a, b) => b.template_width - a.template_width);
         const urls = [];
         const proxyUrl = inReq.server.address().url + inReq.server.prefix + '/proxy/ali';
+        transcoding.forEach((t) => {
+            urls.push(t.template_id);
+            urls.push(`${proxyUrl}/trans/${t.template_id.toLowerCase()}/${ids[0]}/${ids[1]}/.m3u8`);
+        });
         urls.push('SRC');
         urls.push(`${proxyUrl}/src/down/${ids[0]}/${ids[1]}/.bin`);
         const result = {
@@ -225,16 +286,16 @@ async function play(inReq, _outResp) {
                 subt: `${proxyUrl}/src/subt/${ids[0]}/${ids[2]}/.bin`,
             };
         }
-        transcoding.forEach((t) => {
-            urls.push(t.template_id);
-            urls.push(`${proxyUrl}/trans/${t.template_id.toLowerCase()}/${ids[0]}/${ids[1]}/.m3u8`);
-        });
         return result;
     } else if (flag.startsWith('Quark-')) {
         const transcoding = (await Quark.getLiveTranscoding(ids[0], ids[1], ids[2], ids[3])).filter((t) => t.accessable);
         quarkTranscodingCache[ids[2]] = transcoding;
         const urls = [];
         const proxyUrl = inReq.server.address().url + inReq.server.prefix + '/proxy/quark';
+        transcoding.forEach((t) => {
+            urls.push(t.resolution.toUpperCase());
+            urls.push(`${proxyUrl}/trans/${t.resolution.toLowerCase()}/${ids[0]}/${encodeURIComponent(ids[1])}*${ids[2]}*${ids[3]}/.mp4`);
+        });
         urls.push('SRC');
         urls.push(`${proxyUrl}/src/redirect/${ids[0]}/${encodeURIComponent(ids[1])}*${ids[2]}*${ids[3]}/.bin`);
         urls.push('SRC_Proxy');
@@ -254,42 +315,20 @@ async function play(inReq, _outResp) {
                 subt: `${proxyUrl}/src/subt/${ids[0]}/${encodeURIComponent(ids[1])}*${ids[4]}*${ids[5]}/.bin`,
             };
         }
-        transcoding.forEach((t) => {
-            urls.push(t.resolution.toUpperCase());
-            urls.push(`${proxyUrl}/trans/${t.resolution.toLowerCase()}/${ids[0]}/${encodeURIComponent(ids[1])}*${ids[2]}*${ids[3]}/.mp4`);
-        });
         return result;
-        }
-    else if (id.indexOf('.m3u8') < 0) {
-        const sniffer = await inReq.server.messageToDart({
-            action: 'sniff',
-            opt: {
-                url: id,
-                timeout: 10000,
-                rule: 'http((?!http).){12,}?\\.(m3u8|mp4|flv|avi|mkv|rm|wmv|mpg|m4a|mp3)(?!\\?)',
-            },
-        });
-        if (sniffer && sniffer.url) {
-            const hds = {};
-            if (sniffer.headers) {
-                if (sniffer.headers['user-agent']) {
-                    hds['User-Agent'] = sniffer.headers['user-agent'];
-                }
-                if (sniffer.headers['referer']) {
-                    hds['Referer'] = sniffer.headers['referer'];
-                }
-            }
-            return {
-                parse: 0,
-                url: sniffer.url,
-                header: hds,
-            };
-        }
     }
-    return {
-        parse: 0,
-        url: id,
-        }
+}
+
+async function search(inReq, _outResp) {
+    let pg = inReq.body.page;
+    const wd = inReq.body.wd;
+    if (pg <= 0) pg = 1;
+    let page = '';
+    if (pg > 1) {
+        page = '/page/' + pg;
+    }
+    const html = await request(url + page + "/?s=" + encodeURIComponent(wd));
+    return parseHtmlList(html, pg);
 }
 
 async function test(inReq, outResp) {
@@ -301,21 +340,55 @@ async function test(inReq, outResp) {
         };
         const prefix = inReq.server.prefix;
         const dataResult = {};
-        let resp = await inReq.server.inject().post(`${prefix}/support`).payload({
-            clip: 'https://www.alipan.com/s/Av1bAc9qn6P',
-        });
-        dataResult.support = resp.json();
+        let resp = await inReq.server.inject().post(`${prefix}/init`);
+        dataResult.init = resp.json();
         printErr(resp.json());
-        resp = await inReq.server.inject().post(`${prefix}/detail`).payload({
-            id: 'https://www.alipan.com/s/Av1bAc9qn6P',
-        });
-        dataResult.detail = resp.json();
+        resp = await inReq.server.inject().post(`${prefix}/home`);
+        dataResult.home = resp.json();
         printErr(resp.json());
-        resp = await inReq.server.inject().post(`${prefix}/play`).payload({
-            flag: 'xx',
-            id: 'https://www.alipan.com/s/Av1bAc9qn6P',
+        if (dataResult.home.class.length > 0) {
+            resp = await inReq.server.inject().post(`${prefix}/category`).payload({
+                id: dataResult.home.class[0].type_id,
+                page: 1,
+                filter: true,
+                filters: {},
+            });
+            dataResult.category = resp.json();
+            printErr(resp.json());
+            if (dataResult.category.list.length > 0) {
+                resp = await inReq.server.inject().post(`${prefix}/detail`).payload({
+                    id: dataResult.category.list[0].vod_id, // dataResult.category.list.map((v) => v.vod_id),
+                });
+                dataResult.detail = resp.json();
+                printErr(resp.json());
+                if (dataResult.detail.list && dataResult.detail.list.length > 0) {
+                    dataResult.play = [];
+                    for (const vod of dataResult.detail.list) {
+                        const flags = vod.vod_play_from.split('$$$');
+                        const ids = vod.vod_play_url.split('$$$');
+                        for (let j = 0; j < flags.length; j++) {
+                            const flag = flags[j];
+                            const urls = ids[j].split('#');
+                            for (let i = 0; i < urls.length && i < 2; i++) {
+                                resp = await inReq.server
+                                    .inject()
+                                    .post(`${prefix}/play`)
+                                    .payload({
+                                        flag: flag,
+                                        id: urls[i].split('$')[1],
+                                    });
+                                dataResult.play.push(resp.json());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        resp = await inReq.server.inject().post(`${prefix}/search`).payload({
+            wd: '爱',
+            page: 1,
         });
-        dataResult.play = resp.json();
+        dataResult.search = resp.json();
         printErr(resp.json());
         return dataResult;
     } catch (err) {
@@ -325,19 +398,19 @@ async function test(inReq, outResp) {
     }
 }
 
-
-
 export default {
     meta: {
-        key: 'push',
-        name: '推送',
-        type: 4,
+        key: 'xxpan',
+        name: '小盘盘盘',
+        type: 3,
     },
     api: async (fastify) => {
         fastify.post('/init', init);
-        fastify.post('/support', support);
+        fastify.post('/home', home);
+        fastify.post('/category', category);
         fastify.post('/detail', detail);
         fastify.post('/play', play);
+        fastify.post('/search', search);
         fastify.get('/proxy/:site/:what/:flag/:shareId/:fileId/:end', proxy);
         fastify.get('/test', test);
     },
