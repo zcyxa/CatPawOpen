@@ -12,13 +12,48 @@ jobs:
     - uses: actions/setup-node@v3
       with:
         node-version: 18.17.1
-        
-    - name: Run npm bild
+
+    # 清除 npm 缓存
+    - name: Clear npm cache
+      run: npm cache clean --force
+
+    - name: Install dependencies
+      working-directory: nodejs
+      run: npm i
+
+    # 检查 lodash 是否安装成功
+    - name: Check lodash installation
+      working-directory: nodejs
+      continue-on-error: true # 即使检查失败，也继续执行后续步骤
+      run: |
+        if ! node -e "require('lodash')" &> /dev/null; then
+          echo "lodash is missing. Reinstalling..."
+          npm install lodash
+        else
+          echo "lodash is installed."
+        fi
+
+    # 检查关键文件是否存在
+    - name: Check files existence
       working-directory: nodejs
       run: |
-        npm i
-        npm run build
-        npm install lodash
+        if [ ! -f "src/util/ali.js" ]; then
+          echo "File src/util/ali.js not found."
+          exit 1
+        fi
+        if [ ! -f "src/util/quark.js" ]; then
+          echo "File src/util/quark.js not found."
+          exit 1
+        fi
+        if [ ! -f "src/spider/spider.js" ]; then
+          echo "File src/spider/spider.js not found."
+          exit 1
+        fi
+
+    - name: Run npm build
+      working-directory: nodejs
+      run: npm run build
+
     - name: Archive dist
       uses: actions/upload-artifact@v4
       with:
