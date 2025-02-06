@@ -1,23 +1,235 @@
 export default {
-    kunyu77: {
-        testcfg: {
-            bbbb: 'aaaaa',
-        },
+czzy: {
+        url: 'https://cz01.vip'
     },
-    ffm3u8: {
-        url: 'https://cj.ffzyapi.com/api.php/provide/vod/from/ffm3u8',
-        categories: ['国产剧', '香港剧', '韩国剧', '欧美剧', '台湾剧', '日本剧', '海外剧', '泰国剧', '短剧', '动作片', '喜剧片', '爱情片', '科幻片', '恐怖片', '剧情片', '战争片', '动漫片', '大陆综艺', '港台综艺', '日韩综艺', '欧美综艺', '国产动漫', '日韩动漫', '欧美动漫', '港台动漫', '海外动漫', '记录片'],
+live: {
+        contents: 'https://gitee.com/galnt/cctv/raw/master/contents.txt', // 按省区分的目录,供参考,可以不添加
+        url: [
+            {name: 'ITV ', url: 'https://10518590.xyz/bg/itvlist.txt'} 
+        ]
     },
-    alist: [
-        {
-            name: '🐉神族九帝',
-            server: 'https://alist.shenzjd.com',
-        },
-        {
-            name: '💢repl',
-            server: 'https://ali.liucn.repl.co',
-        },
-    ],
+vcm3u8: {
+        ffm3u8: [{
+            name: "非凡采集",
+            url: "https://cj.ffzyapi.com/api.php/provide/vod/from/ffm3u8/",
+            categories: ["国产剧", "香港剧", "韩国剧", "欧美剧", "台湾剧", "日本剧", "海外剧", "泰国剧", "短剧", "动作片", "喜剧片", "爱情片", "科幻片", "恐怖片", "剧情片", "战争片", "动漫片", "大陆综艺", "港台综艺", "日韩综艺", "欧美综艺", "国产动漫", "日韩动漫", "欧美动漫", "港台动漫", "海外动漫", "记录片"],
+            search: true
+        }],
+        hhm3u8: [{
+            name: "火狐采集",
+            url: "https://hhzyapi.com/api.php/provide/vod/from/hhm3u8/",
+            categories: ["动作片", "爱情片", "喜剧片", "科幻片", "恐怖片", "剧情片", "战争片", "灾难片", "悬疑片", "犯罪片", "奇幻片", "短剧", "内地剧", "欧美剧", "香港剧", "韩剧", "日剧", "马泰剧", "中国动漫", "日本动漫", "欧美动漫", "欧美动漫", "大陆综艺", "港台综艺", "日韩综艺", "欧美综艺", "记录片"],
+            search: true
+        }],
+        lzm3u8: [{
+            name: "量子采集",
+            url: "https://cj.lziapi.com/api.php/provide/vod/from/lzm3u8/",
+            categories: ["动作片", "爱情片", "喜剧片", "科幻片", "恐怖片", "剧情片", "战争片", "短剧", "国产剧", "欧美剧", "香港剧", "韩国剧", "日本剧", "台湾剧", "海外剧", "泰国剧", "国产动漫", "日韩动漫", "欧美动漫", "港台动漫", "海外动漫", "大陆综艺", "港台综艺", "日韩综艺", "欧美综艺", "记录片", "足球", "篮球", "网球", "斯诺克"],
+            search: true
+        }],
+        subm3u8: [{
+            name: "速播采集",
+            url: "https://subocaiji.com/api.php/provide/vod/from/subm3u8/",
+            categories: ["动作片", "爱情片", "喜剧片", "科幻片", "恐怖片", "剧情片", "战争片", "动漫电影", "短剧", "大陆剧", "美剧", "港澳剧", "韩剧", "日剧", "台湾剧", "泰剧", "中国动漫", "日本动漫", "欧美动漫", "综艺", "纪录片"],
+            search: true
+        }],
+        xlm3u8: [{
+            name: "新浪采集",
+            url: "https://api.xinlangapi.com/xinlangapi.php/provide/vod/from/xlm3u8/",
+            categories: ["动作片", "爱情片", "喜剧片", "科幻片", "恐怖片", "剧情片", "战争片", "动漫电影", "短剧", "大陆剧", "欧美剧", "港澳剧", "韩剧", "日剧", "台湾剧", "泰剧", "动漫", "综艺", "纪录片", "体育"],
+            search: true
+        }],
+        wjm3u8: [{
+            name: "无尽采集",
+            url: "https://api.wujinapi.me/api.php/provide/vod/from/wjm3u8/",
+            categories: ["动作片", "爱情片", "喜剧片", "科幻片", "恐怖片", "剧情片", "战争片", "悬疑片", "动画片", "犯罪片", "奇幻片", "邵氏电影", "短剧", "国产剧", "美国剧", "香港剧", "韩国剧", "日本剧", "台湾剧", "泰剧", "海外剧", "国产动漫", "日韩动漫", "欧美动漫", "大陆综艺", "日韩综艺", "港台综艺", "欧美综艺", "体育赛事", "影视解说"],
+            search: true
+        }],
+        sanjiu: [{
+            name: '三九',
+            url: 'https://www.39kan.com/api.php/provide/vod/at/json',
+            search: true
+        }],
+        ikunzy: [{
+            name: '爱坤',
+            url: 'https://ikunzyapi.com/api.php/provide/vod/at/json',
+            search: true
+        }],
+        collec: [{
+            name: '卧龙',
+            url: 'https://collect.wolongzyw.com/api.php/provide/vod/at/json',
+            search: true
+        }],
+        apitia: [{
+            name: '天空',
+            url: 'https://api.tiankongapi.com/api.php/provide/vod/at/json',
+            search: true
+        }],
+        cjvodi: [{
+            name: '影图',
+            url: 'https://cj.vodimg.top/api.php/provide/vod/at/json',
+            search: true
+        }],
+        apizui: [{
+            name: '最大',
+            url: 'https://api.zuidapi.com/api.php/provide/vod/at/json',
+            search: true
+        }]
+    },
+appys: {
+    ttmjas: [{
+      name: "天天美剧",
+      url: "https://www.ttmja.com/api.php/app/",
+      search: true
+    }],
+    netfly: [{
+      name: "奈飞",
+      url: "https://www.netfly.tv/api.php/app/",
+      search: true
+    }],
+    bro51d: [{
+      name: "零刻",
+      url: "https://ys.51bro.cn/mogai_api.php/v1.vod",
+      search: true
+    }]
+  },
+avlive: {
+        url: [
+           { name: "性视界", "url": "https://mirror.ghproxy.com/https://raw.githubusercontent.com/lndsqhj/zblive/main/YG.txt" , index: "true" }, 
+           { name: "玩偶", "url": "https://mirror.ghproxy.com/https://raw.githubusercontent.com/lndsqhj/zblive/main/hongkongdoll.txt" , index: "true" }, 
+           { name: "传媒仓库", "url": "https://mirror.ghproxy.com/https://raw.githubusercontent.com/lndsqhj/zblive/main/hsck.txt" , index: "true" },         
+           { name: "三级", "url":"https://mirror.ghproxy.com/https://raw.githubusercontent.com/lndsqhj/zblive/main/idol.txt", index: "true" },
+           { name: "刘玥", "url":"https://mirror.ghproxy.com/https://raw.githubusercontent.com/lndsqhj/zblive/main/juneliu.txt", index: "true" }, 
+           { name: "小姐姐", "url":"https://mirror.ghproxy.com/https://raw.githubusercontent.com/lndsqhj/zblive/main/madou.txt", index: "true" },
+           { name: "麻豆", "url": "https://mirror.ghproxy.com/https://raw.githubusercontent.com/lndsqhj/zblive/main/monlingwu.txt", index: "true" }
+        ]
+      },
+avm3u8: {
+        md1m3u8: [{
+            name: "麻豆①",
+            url: "http://www.9191md.me/api.php/provide/vod/",   
+            search: true
+            }],
+
+        md3m3u8: [{
+            name: "麻豆②",
+            url: "http://86876.cc/api.php/provide/vod/from/mdm3u8/", 
+            search: true
+            }],
+
+        clm3u8: [{
+            name: '草榴资源',
+            url: 'https://www.caoliuzyw.com/api.php/provide/vod/from/clm3u8',
+            search: true
+        }],
+        askm3u: [{
+            name: '奥卡资源',
+            url: 'https://aosikazy.com/api.php/provide/vod/',
+            search: true
+        }],
+        ptm3u8: [{
+            name: '葡萄资源',
+            url: 'https://caiji.putaozyw.net/inc/apijson_vod.php',
+            search: true
+        }],
+        xbm3u8: [{
+            name: '雪豹资源',
+            url: 'https://api.xbapi.cc/api.php/provide/vod/',
+            search: true
+        }],
+        sw401m: [{
+            name: '丝袜资源',
+            url: 'https://www.siwazyw.tv/api.php/provide/vod/',
+            search: true
+        }],
+        adm3u8: [{
+            name: '爱豆资源',
+            url: 'http://chujia.cc/api.php/provide/vod/from/m3u8',
+            search: true
+        }],
+        ddx1m3: [{
+            name: '滴滴资源',
+            url: 'https://api.ddapi.cc/api.php/provide/vod/',
+            search: true
+        }],
+        lym3u8: [{
+            name: '老鸭资源',
+            url: 'https://api.apilyzy.com/api.php/provide/vod/',
+            search: true
+        }],
+        mym3u8: [{
+            name: '猫源传媒',
+            url: 'https://api.maozyapi.com/inc/apijson_vod.php',
+            search: true
+        }],
+        jdm3u8: [{
+            name: '精东影业',
+            url: 'http://chujia.cc/api.php/provide/vod/from/m3u8/',
+            search: true
+        }],
+
+        kkzydd: [{
+            name: '写真',
+            url: 'https://kkzy.me/api.php/provide/vod/at/json',
+            search: true
+        }],
+        apittz: [{
+            name: '天天',
+            url: 'https://apittzy.com/api.php/provide/vod/at/json',
+            search: true
+        }],
+        apilsb: [{
+            name: '色逼',
+            url: 'https://apilsbzy1.com/api.php/provide/vod/at/json',
+            search: true
+        }],
+        slapib: [{
+            name: '森林',
+            url: 'https://slapibf.com/api.php/provide/vod/at/json',
+            search: true
+        }],
+        lbapi9: [{
+            name: '乐播',
+            url: 'https://lbapi9.com/api.php/provide/vod/at/json',
+            search: true
+        }],
+        fhapi9: [{
+            name: '番号',
+            url: 'http://fhapi9.com/api.php/provide/vod/at/json',
+            search: true
+        }]
+    },
+alist: [{
+    name: "🐉神族九帝",
+    server: "https://alist.shenzjd.com"
+  }, {
+    "name": "🌱小新盘",
+    "server": "https://pan.cdnxin.top/"
+  }, {
+    "name": "🌱小丫",
+    "server": "http://alist.xiaoya.pro/"
+  }, {
+    "name": "🌱星梦",
+    "server": "https://pan.bashroot.top"
+  }, {
+    "name": "🌱ecve资源",
+    "server": "https://pan.ecve.cn/"
+  }, {
+    "name": "🌱雨呢",
+    "server": "https://pan.clun.top/"
+  }, {
+    "name": "🌱酷呵盘",
+    "server": "https://pan.kuhehe.top/"
+  }, {
+    "name": "🌱分享者",
+    "server": "https://melist.me/"
+  }, {
+    "name": "🌱目瞪口呆",
+    "server": "https://pan.mdgd.cc/"
+  }, {
+    "name": "🌱神奇云",
+    "server": "https://al.chirmyram.com/"
+  }],
     color: [
         {
             light: {
