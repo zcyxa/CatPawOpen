@@ -8,31 +8,72 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-node@v3
-      with:
-        node-version: 18.17.1
+      - uses: actions/checkout@v3
 
-    - name: Install dependencies
-      working-directory: nodejs
-      run: |
-        npm i
-        # 尝试修复安全漏洞
-        npm audit fix
-        # 安装构建时找不到的依赖
-        npm install qrcode lodash qs
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18.17.1
 
-    - name: Run npm build
-      working-directory: nodejs
-      run: |
-        # 运行构建命令
-        npm run build
-      continue-on-error: false  # 如果构建失败，停止工作流
+      - name: Install dependencies
+        working-directory: nodejs
+        run: |
+          echo "Installing all dependencies..."
+          npm i
+          if [ $? -ne 0 ]; then
+            echo "Dependency installation failed."
+            exit 1
+          fi
+          echo "Trying to fix security vulnerabilities (non - breaking)..."
+          npm audit fix
+          if [ $? -ne 0 ]; then
+            echo "Non - breaking security vulnerability fix failed. Trying force fix..."
+            npm audit fix --force
+            if [ $? -ne 0 ]; then
+              echo "Forced security vulnerability fix failed."
+              exit 1
+            fi
+          fi
+          echo "Installing missing dependencies (lodash, qs, qrcode)..."
+          npm install lodash qs qrcode
+          if [ $? -ne 0 ]; then
+            echo "Installation of missing dependencies failed."
+            exit 1
+          fi
 
-    - name: Archive dist
-      if: success()  # 只有当构建成功时才执行归档操作
-      uses: actions/upload-artifact@v4
-      with:
-        name: dist
-        path: |
-          nodejs/dist
+      - name: Check for eval usage
+        working-directory: nodejs
+        run: |
+          EVAL_USAGE=$(grep -r "eval(" src/)
+          if [ -n "$EVAL_USAGE" ]; then
+            echo "Warning: 'eval' usage detected in the following files:"
+            echo "$EVAL_USAGE"
+            echo "Consider replacing 'eval' with safer alternatives."
+          fi
+
+      - name: Check esbuild configuration
+        working-directory: nodejs
+        run: |
+          if grep -q "external: \['lodash', 'qs', 'qrcode'\]" esbuild.js esbuild-config.js; then
+            echo "esbuild external dependencies configuration found."
+          else
+            echo "Warning: esbuild external dependencies configuration for lodash, qs, qrcode not found."
+            echo "Please add 'external: ['lodash', 'qs', 'qrcode']' to your esbuild configuration."
+          fi
+
+      - name: Run npm build
+        working-directory: nodejs
+        run: |
+          echo "Starting the build process..."
+          npm run build
+          if [ $? -ne 0 ]; then
+            echo "Build failed."
+            exit 1
+          fi
+
+      - name: Archive dist
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: |
+            nodejs/dist
