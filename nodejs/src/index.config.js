@@ -87,8 +87,93 @@ appys: {
         }],
     },
   m3u8cj: {
-    ykm3u8: [{
-      name: "易看源",
+    md1m3u8: [{
+      name: "麻豆①",
+      url: "http://www.9191md.me/api.php/provide/vod/",
+      search: true
+    }],
+    md3m3u8: [{
+      name: "麻豆②",
+      url: "http://86876.cc/api.php/provide/vod/from/mdm3u8/",
+      search: true
+    }],
+    clm3u8: [{
+      name: "草榴资源",
+      url: "https://www.caoliuzyw.com/api.php/provide/vod/from/clm3u8",
+      search: true
+    }],
+    askm3u: [{
+      name: "奥卡资源",
+      url: "https://aosikazy.com/api.php/provide/vod/",
+      search: true
+    }],
+    ptm3u8: [{
+      name: "葡萄资源",
+      url: "https://caiji.putaozyw.net/inc/apijson_vod.php",
+      search: true
+    }],
+    xbm3u8: [{
+      name: "雪豹资源",
+      url: "https://api.xbapi.cc/api.php/provide/vod/",
+      search: true
+    }],
+    sw401m: [{
+      name: "丝袜资源",
+      url: "https://www.siwazyw.tv/api.php/provide/vod/",
+      search: true
+    }],
+    adm3u8: [{
+      name: "爱豆资源",
+      url: "http://chujia.cc/api.php/provide/vod/from/m3u8",
+      search: true
+    }],
+    ddx1m3: [{
+      name: "滴滴资源",
+      url: "https://api.ddapi.cc/api.php/provide/vod/",
+      search: true
+    }],
+    lym3u8: [{
+      name: "老鸭资源",
+      url: "https://api.apilyzy.com/api.php/provide/vod/",
+      search: true
+    }],
+    mym3u8: [{
+      name: "猫源传媒",
+      url: "https://api.maozyapi.com/inc/apijson_vod.php",
+      search: true
+    }],
+    jdm3u8: [{
+      name: "精东影业",
+      url: "http://chujia.cc/api.php/provide/vod/from/m3u8/",
+      search: true
+    }],
+    kkzydd: [{
+      name: "写真",
+      url: "https://kkzy.me/api.php/provide/vod/at/json",
+      search: true
+    }],
+    apittz: [{
+      name: "天天",
+      url: "https://apittzy.com/api.php/provide/vod/at/json",
+      search: true
+    }],
+    apilsb: [{
+      name: "色逼",
+      url: "https://apilsbzy1.com/api.php/provide/vod/at/json",
+      search: true
+    }],
+    slapib: [{
+      name: "森林",
+      url: "https://slapibf.com/api.php/provide/vod/at/json",
+      search: true
+    }],
+    lbapi9: [{
+      name: "乐播",
+      url: "https://lbapi9.com/api.php/provide/vod/at/json",
+      search: true
+    }],
+      ykm3u8: [{
+     name: "易看源",
       url: "https://api.yikanapi.com/api.php/provide/vod/from/yikan",
       categories: ["韩国伦理", "日本伦理", "香港伦理", "西方伦理", "台湾伦理", "日本写真", "西方写真", "国产写真", "动漫"],
       search: true
