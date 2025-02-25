@@ -33,7 +33,7 @@ import bili from './spider/video/bili.js';
 import clicli from './spider/video/clicli.js';
 import _360ba from './spider/video/_360ba.js';
 import appys from './spider/video/appys.js';
-//import m3u8cj from './spider/video/m3u8cj.js';
+import m3u8cj from './spider/video/m3u8cj.js';
 //import maiyoux from './spider/video/maiyoux.js';
 import push from './spider/video/push.js';
 import baseset from './spider/video/baseset.js';
@@ -84,7 +84,7 @@ const spiders = [
     clicli,
     _360ba,
     appys,
-//    m3u8cj,
+    m3u8cj,
 //    maiyoux,
     push,
     baseset,
