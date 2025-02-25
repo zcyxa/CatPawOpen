@@ -17,6 +17,8 @@ jobs:
       - name: Install dependencies
         working-directory: nodejs
         run: |
+          echo "Clearing npm cache..."
+          npm cache clean --force
           echo "Installing all dependencies..."
           npm i
           if [ $? -ne 0 ]; then
