@@ -25,10 +25,12 @@ jobs:
           fi
           echo "Trying to fix security vulnerabilities (non - breaking)..."
           npm audit fix
-          if [ $? -ne 0 ]; then
-            echo "Non - breaking security vulnerability fix failed. Trying force fix..."
+          AUDIT_FIX_EXIT_CODE=$?
+          if [ $AUDIT_FIX_EXIT_CODE -ne 0 ]; then
+            echo "Non - breaking security vulnerability fix had issues. Trying force fix..."
             npm audit fix --force
-            if [ $? -ne 0 ]; then
+            FORCE_AUDIT_FIX_EXIT_CODE=$?
+            if [ $FORCE_AUDIT_FIX_EXIT_CODE -ne 0 ]; then
               echo "Forced security vulnerability fix failed."
               exit 1
             fi
