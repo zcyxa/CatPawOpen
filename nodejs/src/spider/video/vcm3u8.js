@@ -1,8 +1,7 @@
 import * as HLS from 'hls-parser';
 import req from '../../util/req.js';
 
-let url = '';
-let categories = [];
+let srcobj = {};
 
 async function request(reqUrl) {
     let res = await req(reqUrl, {
@@ -12,31 +11,24 @@ async function request(reqUrl) {
 }
 
 async function init(inReq, _outResp) {
-    url = inReq.server.config.ffm3u8.url;
-    categories = inReq.server.config.ffm3u8.categories;
+    srcobj = inReq.server.config.vcm3u8;
     return {};
 }
 
 async function home(_inReq, _outResp) {
-    const data = await request(url);
-    let classes = [];
-    for (const cls of data.class) {
-        const n = cls.type_name.toString().trim();
-        if (categories && categories.length > 0) {
-            if (categories.indexOf(n) < 0) continue;
-        }
-        classes.push({
-            type_id: cls.type_id.toString(),
-            type_name: n,
-        });
-    }
-    if (categories && categories.length > 0) {
-        classes = classes.sort((a, b) => {
-            return categories.indexOf(a.type_name) - categories.indexOf(b.type_name);
-        });
-    }
+    let classes = [];        
+
+
+    classes = Object.keys(srcobj).map(key => ({
+        type_id: key,
+        type_name: srcobj[key][0].name,
+    }));
+
+    
+
     return {
         class: classes,
+      
     };
 }
 
@@ -45,29 +37,82 @@ async function category(inReq, _outResp) {
     const pg = inReq.body.page;
     let page = pg || 1;
     if (page == 0) page = 1;
-    const data = await request(url + `?ac=detail&t=${tid}&pg=${page}`);
     let videos = [];
-    for (const vod of data.list) {
-        videos.push({
-            vod_id: vod.vod_id.toString(),
-            vod_name: vod.vod_name.toString(),
-            vod_pic: vod.vod_pic,
-            vod_remarks: vod.vod_remarks,
-        });
+    
+
+
+    if (tid.includes('=')) {
+        let url = srcobj[tid.split('=')[0]][0].url;
+        let data = null;
+        try {
+            data = await request(url + `?ac=detail&t=${tid.split('=')[1]}&pg=${page}`);
+        } catch (error) {
+            return {};
+        }
+        if (data.length == 0) return {};  
+        for (const vod of data.list) {
+            videos.push({
+                vod_id: tid.split('=')[0].concat('=').concat(vod.vod_id.toString()),
+                vod_name: vod.vod_name.toString(),
+                vod_pic: vod.vod_pic,
+                vod_remarks: vod.vod_remarks,
+            });
+        }
+        return {
+            page: parseInt(data.page),
+            pagecount: data.pagecount,
+            total: data.total,
+            list: videos,
+        };
+    } else {
+        let url = srcobj[tid][0].url;
+        let categories = srcobj[tid][0].categories;
+        let data = null;
+        try {
+            data = await request(url);
+        } catch (error) {
+            return {};
+        }
+        if (data.length == 0) return {};  
+        for (const cls of data.class) {
+            const n = cls.type_name.toString().trim();
+            if (categories && categories.length > 0) {
+                if (categories.indexOf(n) < 0) continue;
+            }
+            videos.push({
+                vod_id: tid.concat('=').concat(cls.type_id.toString()),
+                vod_name: n,
+                vod_pic : 'https://img.omii.top/i/2024/03/17/10qnvl7.webp',
+                vod_remarks: '',
+                cate: {},
+            });
+        }
+        if (categories && categories.length > 0) {
+            videos = videos.sort((a, b) => {
+                return categories.indexOf(a.vod_name) - categories.indexOf(b.vod_name);
+            });
+        }
+        return {
+            page: 1,
+            pagecount: Math.ceil(videos.length / 30),
+            limit: 30,
+            total: videos.length,
+            list: videos,                  
+        };
     }
-    return {
-        page: parseInt(data.page),
-        pagecount: data.pagecount,
-        total: data.total,
-        list: videos,
-    };
 }
 
 async function detail(inReq, _outResp) {
     const ids = !Array.isArray(inReq.body.id) ? [inReq.body.id] : inReq.body.id;
     const videos = [];
     for (const id of ids) {
-        const data = (await request(url + `?ac=detail&ids=${id}`)).list[0];
+        let data = null;
+        try {
+            data = (await request(id.includes('http') ? id : srcobj[id.split('=')[0]][0].url + `?ac=detail&ids=${id.split('=')[1]}`)).list[0];
+        } catch (error) {
+            continue;
+        }
+        if (data.length == 0) continue;
         let vod = {
             vod_id: data.vod_id,
             vod_name: data.vod_name,
@@ -79,7 +124,7 @@ async function detail(inReq, _outResp) {
             vod_actor: data.vod_actor,
             vod_director: data.vod_director,
             vod_content: data.vod_content.trim(),
-            vod_play_from: data.vod_play_from,
+            vod_play_from: srcobj.hasOwnProperty(data.vod_play_from) ? Object.values(srcobj[data.vod_play_from])[0].name : data.vod_play_from,
             vod_play_url: data.vod_play_url,
         };
         videos.push(vod);
@@ -150,20 +195,32 @@ async function play(inReq, _outResp) {
 
 async function search(inReq, _outResp) {
     const wd = inReq.body.wd;
-    const data = await request(url + `?ac=detail&wd=${wd}`);
     let videos = [];
-    for (const vod of data.list) {
-        videos.push({
-            vod_id: vod.vod_id.toString(),
-            vod_name: vod.vod_name.toString(),
-            vod_pic: vod.vod_pic,
-            vod_remarks: vod.vod_remarks,
-        });
+    for (let i = 0; i < Object.keys(srcobj).length; i++) {
+        if (!Object.values(srcobj)[i][0].search) continue;
+        let data = null;
+        try {
+            data = await request(Object.values(srcobj)[i][0].url + `?ac=detail&wd=${wd}`);
+        } catch (error) {
+            continue;
+        }
+        if (data.length == 0) continue;
+        for (const vod of data.list) {
+            if (!vod.vod_name.toString().includes(wd)) continue;
+            videos.push({
+                vod_id: Object.values(srcobj)[i][0].url.concat('?ac=detail&ids=').concat(vod.vod_id.toString()),
+                vod_name: vod.vod_name.toString(),
+                vod_pic: vod.vod_pic,
+                //vod_remarks: vod.vod_remarks,
+                vod_remarks: Object.values(srcobj)[i][0].name,
+            });
+        }
     }
     return {
-        page: parseInt(data.page),
-        pagecount: data.pagecount,
-        total: data.total,
+        page: 1,
+        pagecount: Math.ceil(videos.length / 30),
+        limit: 30,
+        total: videos.length,
         list: videos,
     };
 }
@@ -186,6 +243,7 @@ async function test(inReq, outResp) {
         if (dataResult.home.class.length > 0) {
             resp = await inReq.server.inject().post(`${prefix}/category`).payload({
                 id: dataResult.home.class[0].type_id,
+                //id: 'ffm3u8/13',
                 page: 1,
                 filter: true,
                 filters: {},
@@ -194,7 +252,7 @@ async function test(inReq, outResp) {
             printErr(resp.json());
             if (dataResult.category.list.length > 0) {
                 resp = await inReq.server.inject().post(`${prefix}/detail`).payload({
-                    id: dataResult.category.list[0].vod_id, // dataResult.category.list.map((v) => v.vod_id),
+                    id: dataResult.category.list[0].vod_id,
                 });
                 dataResult.detail = resp.json();
                 printErr(resp.json());
@@ -237,8 +295,8 @@ async function test(inReq, outResp) {
 
 export default {
     meta: {
-        key: 'ffm3u8',
-        name: '非凡采集',
+        key: 'vcm3u8',
+        name: '采集',
         type: 3,
     },
     api: async (fastify) => {
