@@ -30,9 +30,10 @@ jobs:
           AUDIT_FIX_EXIT_CODE=$?
           if [ $AUDIT_FIX_EXIT_CODE -ne 0 ]; then
             echo "Non - breaking security vulnerability fix had issues. Trying force fix..."
-            echo "Starting npm audit fix --force..."
+            set -x
             npm audit fix --force
             FORCE_AUDIT_FIX_EXIT_CODE=$?
+            set +x
             if [ $FORCE_AUDIT_FIX_EXIT_CODE -ne 0 ]; then
               echo "Forced security vulnerability fix failed."
               exit 1
