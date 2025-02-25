@@ -12,14 +12,25 @@ jobs:
     - uses: actions/setup-node@v3
       with:
         node-version: 18.17.1
-        
-    - name: Run npm bild
+
+    - name: Install dependencies
       working-directory: nodejs
       run: |
         npm i
+        # 尝试修复安全漏洞
+        npm audit fix
+        # 安装构建时找不到的依赖
+        npm install qrcode lodash qs
+
+    - name: Run npm build
+      working-directory: nodejs
+      run: |
+        # 运行构建命令
         npm run build
-        
+      continue-on-error: false  # 如果构建失败，停止工作流
+
     - name: Archive dist
+      if: success()  # 只有当构建成功时才执行归档操作
       uses: actions/upload-artifact@v4
       with:
         name: dist
