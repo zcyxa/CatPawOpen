@@ -19,7 +19,12 @@ jobs:
         run: |
           echo "Clearing npm cache..."
           npm cache clean --force
-          echo "Installing all dependencies..."
+          echo "Installing all dependencies and esbuild@0.25.0..."
+          npm install esbuild@0.25.0
+          if [ $? -ne 0 ]; then
+            echo "Installation of esbuild@0.25.0 failed."
+            exit 1
+          fi
           npm i
           if [ $? -ne 0 ]; then
             echo "Dependency installation failed."
@@ -35,7 +40,8 @@ jobs:
             FORCE_AUDIT_FIX_EXIT_CODE=$?
             set +x
             if [ $FORCE_AUDIT_FIX_EXIT_CODE -ne 0 ]; then
-              echo "Forced security vulnerability fix failed."
+              echo "Forced security vulnerability fix failed. Detailed error log:"
+              npm audit --json | jq '.'
               exit 1
             fi
           fi
